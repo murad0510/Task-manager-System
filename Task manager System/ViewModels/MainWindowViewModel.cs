@@ -103,8 +103,8 @@ namespace Task_manager_System.ViewModels
                 var pragram = new ProgramInfo();
                 pragram.Name = allProcess[i].ProcessName;
                 var cpu = GetCpuUsage(allProcess[i]);
-                pragram.CPU = cpu;
                 //MessageBox.Show($"{allProcess[i].Threads.Count} - {allProcess[i].ProcessName}");
+                pragram.CPU = cpu;
                 RunningPrograms.Add(pragram);
             }
         }
