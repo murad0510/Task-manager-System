@@ -40,10 +40,27 @@ namespace Task_manager_System.ViewModels
             set { createOrEndProgramName = value; OnPropertyChanged(); }
         }
 
+        private string blockProgramName;
+
+        public string BlockProgramName
+        {
+            get { return blockProgramName; }
+            set { blockProgramName = value; OnPropertyChanged(); }
+        }
+
+        private ObservableCollection<ProgramInfo> blockedPrograms = new ObservableCollection<ProgramInfo>();
+
+        public ObservableCollection<ProgramInfo> BlockedPrograms
+        {
+            get { return blockedPrograms; }
+            set { blockedPrograms = value; OnPropertyChanged(); }
+        }
+
 
         public RelayCommand SelectionChanged { get; set; }
         public RelayCommand End { get; set; }
         public RelayCommand Create { get; set; }
+        public RelayCommand AddBlockBoxButton { get; set; }
 
         public MainWindowViewModel()
         {
@@ -74,7 +91,6 @@ namespace Task_manager_System.ViewModels
                         if (allProcess[i].ProcessName == process.Name)
                         {
                             allProcess[i].Kill();
-
                         }
                     }
                 }
@@ -82,7 +98,65 @@ namespace Task_manager_System.ViewModels
 
             Create = new RelayCommand((obj) =>
             {
-                Process.Start($"{CreateOrEndProgramName}");
+                if (BlockedPrograms.Count > 0)
+                {
+                    for (int i = 0; i < BlockedPrograms.Count; i++)
+                    {
+                        if (!CreateOrEndProgramName.Contains(BlockedPrograms[i].Name.ToLower()))
+                        {
+                            Process.Start($"{CreateOrEndProgramName}");
+                        }
+                        else
+                        {
+                            MessageBox.Show("This program is blocked");
+                        }
+                    }
+                }
+                else
+                {
+                    Process.Start($"{CreateOrEndProgramName}");
+                }
+
+                CreateOrEndProgramName = string.Empty;
+            });
+
+            AddBlockBoxButton = new RelayCommand((obj) =>
+            {
+                bool result = false;
+                for (int i = 0; i < BlockedPrograms.Count; i++)
+                {
+                    if (BlockedPrograms[i].Name.ToLower() == BlockProgramName.ToLower())
+                    {
+                        result = true;
+                        break;
+                    }
+                }
+
+                if (!result)
+                {
+                    var programInfo = new ProgramInfo();
+                    programInfo.Name = BlockProgramName;
+                    BlockedPrograms.Add(programInfo);
+
+                    var allProcess = Process.GetProcesses();
+
+                    for (int i = 0; i < allProcess.Length; i++)
+                    {
+                        for (int k = 0; k < BlockedPrograms.Count; k++)
+                        {
+                            if (allProcess[i].ProcessName.ToLower() == BlockedPrograms[k].Name.ToLower())
+                            {
+                                allProcess[i].Kill();
+                            }
+                        }
+                    }
+                }
+                else
+                {
+                    MessageBox.Show("You can't add the program you added again !!!");
+                }
+
+                BlockProgramName = string.Empty;
             });
         }
 
@@ -100,14 +174,36 @@ namespace Task_manager_System.ViewModels
             var allProcess = Process.GetProcesses();
             for (int i = 0; i < allProcess.Length; i++)
             {
-                var pragram = new ProgramInfo();
-                pragram.Name = allProcess[i].ProcessName;
-                var cpu = GetCpuUsage(allProcess[i]);
-                //MessageBox.Show($"{allProcess[i].Threads.Count} - {allProcess[i].ProcessName}");
-                pragram.CPU = cpu;
-                RunningPrograms.Add(pragram);
+                if (BlockedPrograms.Count > 0)
+                {
+                    for (int k = 0; k < BlockedPrograms.Count; k++)
+                    {
+                        if (allProcess[i].ProcessName.ToLower() == BlockedPrograms[k].Name.ToLower())
+                        {
+                            allProcess[i].Kill();
+                        }
+                        else
+                        {
+                            var pragram = new ProgramInfo();
+                            pragram.Name = allProcess[i].ProcessName;
+                            var cpu = GetCpuUsage(allProcess[i]);
+                            pragram.CPU = cpu;
+                            RunningPrograms.Add(pragram);
+                        }
+                    }
+                }
+                else
+                {
+                    var pragram = new ProgramInfo();
+                    pragram.Name = allProcess[i].ProcessName;
+                    var cpu = GetCpuUsage(allProcess[i]);
+                    pragram.CPU = cpu;
+                    RunningPrograms.Add(pragram);
+                }
             }
+
         }
     }
-
 }
+
+
